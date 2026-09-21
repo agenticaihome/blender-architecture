@@ -517,15 +517,32 @@ class Roof:
             return self.ridge_axis
         return "x" if float(width) >= float(depth) else "y"
 
-    def height_for(self, width: float, depth: float) -> float:
-        """Ridge height above the eave line.
-
-        ``h = (half_span + overhang) * tan(pitch)`` where ``half_span`` is half
-        of the footprint side perpendicular to the ridge.
-        """
+    def span_for(self, width: float, depth: float) -> float:
+        """Footprint side perpendicular to the ridge (the side the roof slopes down)."""
         axis = self.resolved_ridge_axis(width, depth)
-        span = float(depth) if axis == "x" else float(width)
-        return (span / 2.0 + float(self.overhang)) * math.tan(math.radians(self.pitch))
+        return float(depth) if axis == "x" else float(width)
+
+    def height_for(self, width: float, depth: float) -> float:
+        """Ridge height above the top of the walls.
+
+        ``h = (span / 2) * tan(pitch)``.
+
+        The roof plane is anchored at the wall top: rafters sit *on* the wall
+        plate and continue outwards, so the overhang hangs BELOW the wall top
+        (see :meth:`eave_drop`) instead of lifting the ridge. Folding the
+        overhang into the ridge height would leave a triangular gap between
+        the wall top and the roof at the gable ends.
+        """
+        span = self.span_for(width, depth)
+        return (span / 2.0) * math.tan(math.radians(self.pitch))
+
+    def eave_drop(self) -> float:
+        """How far the overhang edge hangs below the wall top."""
+        return float(self.overhang) * math.tan(math.radians(self.pitch))
+
+    def slope_run(self, width: float, depth: float) -> float:
+        """Horizontal run of one roof plane, ridge -> overhang edge."""
+        return self.span_for(width, depth) / 2.0 + float(self.overhang)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
