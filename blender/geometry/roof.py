@@ -50,7 +50,10 @@ def build_roof(
     # are easy to get backwards (a V instead of a roof). Naming the four
     # corners makes the shape self-evident and matches what the tests assert.
     angle = math.radians(float(roof.pitch))
-    eave_z = ridge_z - run * math.tan(angle)  # outer edge of the overhang
+    # NOTE: distinct from `eave_z` (the wall top). This is the outer edge of
+    # the overhang, which hangs `overhang * tan(pitch)` BELOW the wall top.
+    # Reusing the name here silently dropped the gable triangles by that much.
+    overhang_z = ridge_z - run * math.tan(angle)
     half_ridge = ridge_len / 2.0
 
     for side in (-1, 1):
@@ -59,16 +62,16 @@ def build_roof(
             top = [
                 Vector((cx - half_ridge, cy, ridge_z)),
                 Vector((cx + half_ridge, cy, ridge_z)),
-                Vector((cx + half_ridge, cy + side * run, eave_z)),
-                Vector((cx - half_ridge, cy + side * run, eave_z)),
+                Vector((cx + half_ridge, cy + side * run, overhang_z)),
+                Vector((cx - half_ridge, cy + side * run, overhang_z)),
             ]
         else:
             # ridge runs along Y; the slab falls away along X
             top = [
                 Vector((cx, cy - half_ridge, ridge_z)),
                 Vector((cx, cy + half_ridge, ridge_z)),
-                Vector((cx + side * run, cy + half_ridge, eave_z)),
-                Vector((cx + side * run, cy - half_ridge, eave_z)),
+                Vector((cx + side * run, cy + half_ridge, overhang_z)),
+                Vector((cx + side * run, cy - half_ridge, overhang_z)),
             ]
 
         bm = bmesh.new()
